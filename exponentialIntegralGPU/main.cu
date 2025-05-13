@@ -24,7 +24,6 @@ unsigned int n, numberOfSamples;
 double a, b; // The interval that we are going to use
 
 int main(int argc, char *argv[]){
-	unsigned int ui, uj;
 	cpu = true;
 	gpu = true;
 	verbose = false;
@@ -73,42 +72,55 @@ int main(int argc, char *argv[]){
 	double timeTotalGpuFloat  = 0.0;
 	double timeTotalGpuDouble = 0.0;
 
-	try {
-		resultsFloatCpu.resize(n,vector< float >(numberOfSamples));
-	} catch (std::bad_alloc const&){
-		cout << "resultsFloatCpu memory allocation fail!" << endl;	exit(1);
-	}
-
-	try {
-		resultsDoubleCpu.resize(n, vector<double>(numberOfSamples));
-	} catch (std::bad_alloc const&){
-		cout << "resultsDoubleCpu memory allocation fail!" << endl;	exit(1);
-	}
-
+	resultsFloatCpu.resize(n,vector<float>(numberOfSamples));
+	resultsDoubleCpu.resize(n, vector<double>(numberOfSamples));
 
 	if (cpu){
 		gettimeofday(&expoStart, NULL);
-		exponentialIntegral_grid_CPU<float>(resultsFloatCpu, n, maxIterations, numberOfSamples){
+		exponentialIntegral_grid_CPU<float>(resultsFloatCpu, n, a, b, maxIterations, numberOfSamples);
 		gettimeofday(&expoEnd, NULL);
 		timeTotalCpuFloat = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 
 		gettimeofday(&expoStart, NULL);
-		exponentialIntegral_grid_CPU<double>(resultsDoubleCpu, n, maxIterations, numberOfSamples){
+		exponentialIntegral_grid_CPU<double>(resultsDoubleCpu, n, a, b, maxIterations, numberOfSamples);
 		gettimeofday(&expoEnd, NULL);
 		timeTotalCpuDouble = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 	}
 
 	if (gpu){
+		
+		int block_size = 20;
+		int N = n;
+		int M = maxIterations;
+		dim3 nBlock(block_size , block_size);
+		dim3 nGrid((N/nBlock.x ) + (!(N%nBlock.x) ? 0:1) , (M/nBlock.y) + (!(M%nBlock.y) ? 0:1));
+		
+		float* resultsFloatGpu_d;
+		double* resultsDoubleGpu_d;
+		cudaMalloc((void**)& resultsFloatGpu_d , n*numberOfSamples * sizeof(float));
+		cudaMalloc((void**)& resultsDoubleGpu_d, n*numberOfSamples * sizeof(double));
+
 		gettimeofday(&expoStart, NULL);
-		exponentialIntegral_grid_GPU<float>(resultsFloatCpu, n, maxIterations, numberOfSamples){
+		exponentialIntegral_grid_GPU<float><<<nBlock, nGrid>>>(resultsFloatGpu_d, n, a, b, maxIterations, numberOfSamples);
 		gettimeofday(&expoEnd, NULL);
 		timeTotalCpuFloat = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 
 		gettimeofday(&expoStart, NULL);
-		exponentialIntegral_grid_GPU<double>(resultsDoubleCpu, n, maxIterations, numberOfSamples){
+		exponentialIntegral_grid_GPU<double><<<nBlock, nGrid>>>(resultsDoubleGpu_d, n, a, b, maxIterations, numberOfSamples);
 		gettimeofday(&expoEnd, NULL);
 		timeTotalCpuDouble = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
+
+		resultsFloatGpu = (float*)malloc(n*numberOfSamples * sizeof(float));
+		resultsDoubleGpu = (double*)malloc(n*numberOfSamples * sizeof(double));
+		cudaMemset(resultsFloatGpu_d, 0, n*numberOfSamples);
+		cudaMemset(resultsDoubleGpu_d, 0, n*numberOfSamples);
+		cudaMemcpy(resultsFloatGpu , resultsFloatGpu_d , n*numberOfSamples * sizeof(float) , cudaMemcpyDeviceToHost);
+		cudaMemcpy(resultsDoubleGpu, resultsDoubleGpu_d, n*numberOfSamples * sizeof(double), cudaMemcpyDeviceToHost);
+
+		cudaFree(resultsFloatGpu);
+		cudaFree(resultsDoubleGpu);
 	}
+
 
 	if (timing){
 		if (cpu){
@@ -127,7 +139,7 @@ int main(int argc, char *argv[]){
 			outputResultsCpu(resultsFloatCpu, resultsDoubleCpu);
 		}
 		if (gpu){
-			outputResultsGpu(resultsFloatCpu, resultsDoubleCpu);
+			outputResultsGpu(resultsFloatGpu, resultsDoubleGpu);
 		}
 	}
 	return 0;
