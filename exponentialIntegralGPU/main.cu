@@ -20,7 +20,7 @@ void printUsage(void);
 
 int maxIterations;
 bool verbose, timing, cpu, gpu;
-unsigned int n, numberOfSamples;
+int n, numberOfSamples;
 double a, b; // The interval that we are going to use
 
 int main(int argc, char *argv[]){
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]){
 	numberOfSamples = 10;
 	a = 0.0;
 	b = 10.0;
-	maxIterations = 2000000000;
+	maxIterations =  2000; //2000000000;
 	struct timeval expoStart, expoEnd;
 
 	parseArguments(argc, argv);
@@ -66,14 +66,14 @@ int main(int argc, char *argv[]){
 	std::vector<std::vector<double>> resultsDoubleCpu;
 	double timeTotalCpuFloat = 0.0;
 	double timeTotalCpuDouble = 0.0;
+	resultsFloatCpu.resize (n, vector<float >(numberOfSamples));
+	resultsDoubleCpu.resize(n, vector<double>(numberOfSamples));
 
 	float*  resultsFloatGpu;
 	double* resultsDoubleGpu;
 	double timeTotalGpuFloat  = 0.0;
 	double timeTotalGpuDouble = 0.0;
-
-	resultsFloatCpu.resize(n,vector<float>(numberOfSamples));
-	resultsDoubleCpu.resize(n, vector<double>(numberOfSamples));
+		
 
 	if (cpu){
 		gettimeofday(&expoStart, NULL);
@@ -89,36 +89,42 @@ int main(int argc, char *argv[]){
 
 	if (gpu){
 		
-		int block_size = 20;
+		int block_size = 2;
 		int N = n;
 		int M = maxIterations;
 		dim3 nBlock(block_size , block_size);
 		dim3 nGrid((N/nBlock.x ) + (!(N%nBlock.x) ? 0:1) , (M/nBlock.y) + (!(M%nBlock.y) ? 0:1));
-		
+
 		float* resultsFloatGpu_d;
-		double* resultsDoubleGpu_d;
 		cudaMalloc((void**)& resultsFloatGpu_d , n*numberOfSamples * sizeof(float));
+
+		gettimeofday(&expoStart, NULL);
+		exponentialIntegral_grid_GPU<float><<<nGrid, nBlock>>>(resultsFloatGpu_d, n, a, b, maxIterations, numberOfSamples);
+		gettimeofday(&expoEnd, NULL);
+		timeTotalGpuFloat = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
+
+		resultsFloatGpu = (float*)malloc(n*numberOfSamples * sizeof(float));
+		cudaMemset(resultsFloatGpu_d, 0, n*numberOfSamples);
+		cudaMemcpy(resultsFloatGpu , resultsFloatGpu_d , n*numberOfSamples * sizeof(float) , cudaMemcpyDeviceToHost);
+
+		cudaFree(resultsFloatGpu_d);
+	
+
+
+		double* resultsDoubleGpu_d;
 		cudaMalloc((void**)& resultsDoubleGpu_d, n*numberOfSamples * sizeof(double));
 
 		gettimeofday(&expoStart, NULL);
-		exponentialIntegral_grid_GPU<float><<<nBlock, nGrid>>>(resultsFloatGpu_d, n, a, b, maxIterations, numberOfSamples);
+		exponentialIntegral_grid_GPU<double><<<nGrid, nBlock>>>(resultsDoubleGpu_d, n, a, b, maxIterations, numberOfSamples);
 		gettimeofday(&expoEnd, NULL);
-		timeTotalCpuFloat = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
+		timeTotalGpuDouble = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 
-		gettimeofday(&expoStart, NULL);
-		exponentialIntegral_grid_GPU<double><<<nBlock, nGrid>>>(resultsDoubleGpu_d, n, a, b, maxIterations, numberOfSamples);
-		gettimeofday(&expoEnd, NULL);
-		timeTotalCpuDouble = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
-
-		resultsFloatGpu = (float*)malloc(n*numberOfSamples * sizeof(float));
 		resultsDoubleGpu = (double*)malloc(n*numberOfSamples * sizeof(double));
-		cudaMemset(resultsFloatGpu_d, 0, n*numberOfSamples);
 		cudaMemset(resultsDoubleGpu_d, 0, n*numberOfSamples);
-		cudaMemcpy(resultsFloatGpu , resultsFloatGpu_d , n*numberOfSamples * sizeof(float) , cudaMemcpyDeviceToHost);
 		cudaMemcpy(resultsDoubleGpu, resultsDoubleGpu_d, n*numberOfSamples * sizeof(double), cudaMemcpyDeviceToHost);
 
-		cudaFree(resultsFloatGpu);
-		cudaFree(resultsDoubleGpu);
+		cudaFree(resultsDoubleGpu_d);
+				
 	}
 
 
@@ -129,8 +135,8 @@ int main(int argc, char *argv[]){
 		}
 
 		if (gpu){
-			printf("calculating the exponentials on the GPU in FLOATS  took: %f seconds\n", timeTotalCpuFloat);
-			printf("calculating the exponentials on the GPU in DOUBLES took: %f seconds\n", timeTotalCpuDouble);
+			printf("calculating the exponentials on the GPU in FLOATS  took: %f seconds\n", timeTotalGpuFloat);
+			printf("calculating the exponentials on the GPU in DOUBLES took: %f seconds\n", timeTotalGpuDouble);
 		}
 	}
 
@@ -165,7 +171,7 @@ void outputResultsGpu(float* resultsFloatGpu, double* resultsDoubleGpu){
 	for (ui=1; ui<=n; ui++) {
 		for (uj=1; uj<=numberOfSamples; uj++) {
 			x = a + uj*division;
-			std::cout << "CPU==> exponentialIntegralDouble (" << ui << "," << x <<")=" << resultsDoubleGpu[(ui-1)*n + uj-1] << " ,";
+			std::cout << "GPU==> exponentialIntegralDouble (" << ui << "," << x <<")=" << resultsDoubleGpu[(ui-1)*n + uj-1] << " ,";
 			std::cout << "exponentialIntegralFloat  ("        << ui << "," << x <<")=" << resultsFloatGpu [(ui-1)*n + uj-1] << endl;
 		}
 	}
