@@ -2,7 +2,6 @@
 
 template <typename real>
 __host__ __device__ inline real exponentialIntegral(int n, real x, int maxIterations){
-	static const real eulerConstant = 0.5772156649015329;
 	real epsilon = 1e-30;
 	//real bigReal = std::numeric_limits<real>::max();
 	real bigReal = biggestNum<real>();
@@ -60,7 +59,21 @@ __host__ __device__ inline real exponentialIntegral(int n, real x, int maxIterat
 	return ans;
 }
 
+template <typename real>
+real max_diff(std::vector<std::vector<real>>& a, real* b, int m, int n){
+	real diff;
+	real top_diff = 0;
 
+	for (int i=0; i<m; i++){
+		for (int j=0; j<n; j++){
+			diff = fabs(a[i][j] - b[i*n + j]);
+			if (top_diff < diff){
+				top_diff = diff;
+			}
+		}
+	}
+	return top_diff;
+}
 
 template <typename real>
 void exponentialIntegral_grid_CPU(std::vector<std::vector<real>>& results, int n,
@@ -85,6 +98,7 @@ __global__ void exponentialIntegral_grid_GPU(real* results, int n,
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	int idy = blockIdx.y * blockDim.y + threadIdx.y;
 
+
 	real x;
 	real division = (b - a) / ((real)(numberOfSamples));
 	
@@ -94,6 +108,9 @@ __global__ void exponentialIntegral_grid_GPU(real* results, int n,
 	}
 }
 
+
+template float max_diff(std::vector<std::vector<float>>& a, float* b, int m, int n);
+template double max_diff(std::vector<std::vector<double>>& a, double* b, int m, int n);
 
 template void exponentialIntegral_grid_CPU<float>(std::vector<std::vector<float>>&, int, double, double, int, int);
 template void exponentialIntegral_grid_CPU<double>(std::vector<std::vector<double>>&, int, double, double, int, int);

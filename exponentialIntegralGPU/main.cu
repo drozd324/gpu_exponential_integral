@@ -19,22 +19,25 @@ int	parseArguments(int argc, char **argv);
 void printUsage(void);
 
 int maxIterations;
-bool verbose, timing, cpu, gpu;
+bool verbose, timing, cpu, gpu, error;
 int n, numberOfSamples;
 double a, b; // The interval that we are going to use
+
+int block_size = 32;
 
 int main(int argc, char *argv[]){
 	cpu = true;
 	gpu = true;
 	verbose = false;
 	timing = false;
+	error = false;
 	// n is the maximum order of the exponential integral that we are going to test
 	// numberOfSamples is the number of samples in the interval [0,10] that we are going to calculate
 	n = 10;
 	numberOfSamples = 10;
 	a = 0.0;
 	b = 10.0;
-	maxIterations =  2000; //2000000000;
+	maxIterations = 2000000000;
 	struct timeval expoStart, expoEnd;
 
 	parseArguments(argc, argv);
@@ -66,8 +69,6 @@ int main(int argc, char *argv[]){
 	std::vector<std::vector<double>> resultsDoubleCpu;
 	double timeTotalCpuFloat = 0.0;
 	double timeTotalCpuDouble = 0.0;
-	resultsFloatCpu.resize (n, vector<float >(numberOfSamples));
-	resultsDoubleCpu.resize(n, vector<double>(numberOfSamples));
 
 	float*  resultsFloatGpu;
 	double* resultsDoubleGpu;
@@ -76,12 +77,15 @@ int main(int argc, char *argv[]){
 		
 
 	if (cpu){
+
 		gettimeofday(&expoStart, NULL);
+		resultsFloatCpu.resize (n, vector<float >(numberOfSamples));
 		exponentialIntegral_grid_CPU<float>(resultsFloatCpu, n, a, b, maxIterations, numberOfSamples);
 		gettimeofday(&expoEnd, NULL);
 		timeTotalCpuFloat = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 
 		gettimeofday(&expoStart, NULL);
+		resultsDoubleCpu.resize(n, vector<double>(numberOfSamples));
 		exponentialIntegral_grid_CPU<double>(resultsDoubleCpu, n, a, b, maxIterations, numberOfSamples);
 		gettimeofday(&expoEnd, NULL);
 		timeTotalCpuDouble = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
@@ -89,42 +93,46 @@ int main(int argc, char *argv[]){
 
 	if (gpu){
 		
-		int block_size = 2;
 		int N = n;
 		int M = maxIterations;
 		dim3 nBlock(block_size , block_size);
 		dim3 nGrid((N/nBlock.x ) + (!(N%nBlock.x) ? 0:1) , (M/nBlock.y) + (!(M%nBlock.y) ? 0:1));
 
+
+		gettimeofday(&expoStart, NULL);
 		float* resultsFloatGpu_d;
 		cudaMalloc((void**)& resultsFloatGpu_d , n*numberOfSamples * sizeof(float));
 
-		gettimeofday(&expoStart, NULL);
 		exponentialIntegral_grid_GPU<float><<<nGrid, nBlock>>>(resultsFloatGpu_d, n, a, b, maxIterations, numberOfSamples);
-		gettimeofday(&expoEnd, NULL);
-		timeTotalGpuFloat = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 
+		cudaStream_t streamFloat;
+		cudaStreamCreate(&streamFloat);
 		resultsFloatGpu = (float*)malloc(n*numberOfSamples * sizeof(float));
-		cudaMemset(resultsFloatGpu_d, 0, n*numberOfSamples);
-		cudaMemcpy(resultsFloatGpu , resultsFloatGpu_d , n*numberOfSamples * sizeof(float) , cudaMemcpyDeviceToHost);
+		cudaMemcpyAsync(resultsFloatGpu , resultsFloatGpu_d , n*numberOfSamples * sizeof(float) , cudaMemcpyDeviceToHost, streamFloat);
 
 		cudaFree(resultsFloatGpu_d);
+		cudaStreamSynchronize(streamFloat);
+		cudaStreamDestroy(streamFloat);
+		gettimeofday(&expoEnd, NULL);
+		timeTotalGpuFloat = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 	
 
-
+		gettimeofday(&expoStart, NULL);
 		double* resultsDoubleGpu_d;
 		cudaMalloc((void**)& resultsDoubleGpu_d, n*numberOfSamples * sizeof(double));
 
-		gettimeofday(&expoStart, NULL);
 		exponentialIntegral_grid_GPU<double><<<nGrid, nBlock>>>(resultsDoubleGpu_d, n, a, b, maxIterations, numberOfSamples);
-		gettimeofday(&expoEnd, NULL);
-		timeTotalGpuDouble = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 
+		cudaStream_t streamDouble;
+		cudaStreamCreate(&streamDouble);
 		resultsDoubleGpu = (double*)malloc(n*numberOfSamples * sizeof(double));
-		cudaMemset(resultsDoubleGpu_d, 0, n*numberOfSamples);
-		cudaMemcpy(resultsDoubleGpu, resultsDoubleGpu_d, n*numberOfSamples * sizeof(double), cudaMemcpyDeviceToHost);
+		cudaMemcpyAsync(resultsDoubleGpu, resultsDoubleGpu_d, n*numberOfSamples * sizeof(double), cudaMemcpyDeviceToHost, streamDouble);
 
 		cudaFree(resultsDoubleGpu_d);
-				
+		cudaStreamSynchronize(streamDouble);
+		cudaStreamDestroy(streamDouble);
+		gettimeofday(&expoEnd, NULL);
+		timeTotalGpuDouble = ((expoEnd.tv_sec + expoEnd.tv_usec*0.000001) - (expoStart.tv_sec + expoStart.tv_usec*0.000001));
 	}
 
 
@@ -148,6 +156,14 @@ int main(int argc, char *argv[]){
 			outputResultsGpu(resultsFloatGpu, resultsDoubleGpu);
 		}
 	}
+
+	if (error) {
+		if (gpu && cpu){
+			std::cout << "Max absolute CPU GPU difference Float: " << max_diff(resultsFloatCpu, resultsFloatGpu, n, numberOfSamples) << "\n";
+			std::cout << "Max absolute CPU GPU difference Double: " << max_diff(resultsDoubleCpu, resultsDoubleGpu, n, numberOfSamples) << "\n";
+		}
+	}
+
 	return 0;
 }
 
@@ -179,7 +195,7 @@ void outputResultsGpu(float* resultsFloatGpu, double* resultsDoubleGpu){
 
 int parseArguments(int argc, char *argv[]){
 	int c;
-	while ((c = getopt(argc, argv, "cghi:n:m:a:b:tv")) != -1){
+	while ((c = getopt(argc, argv, "cgehi:n:m:a:b:B:tv")) != -1){
 		switch (c) {
 			case 'c':
 				cpu = false;
@@ -212,6 +228,12 @@ int parseArguments(int argc, char *argv[]){
 			case 'v':
 				verbose = true;
 			   	break;
+			case 'e':
+				error = true;
+			   	break;
+			case 'B':
+				block_size = atof(optarg);
+			   	break;
 			default:
 				fprintf(stderr, "Invalid option given\n");
 				printUsage();
@@ -220,6 +242,7 @@ int parseArguments(int argc, char *argv[]){
 	}
 	return 0;
 }
+
 void printUsage(){
 	printf("exponentialIntegral program\n");
 	printf("by: Jose Mauricio Refojo <refojoj@tcd.ie>\n");
@@ -236,5 +259,7 @@ void printUsage(){
 	printf("      -m   size    : will set the number of samples taken in the (a,b) interval to size (default: 10)\n");
 	printf("      -t           : will output the amount of time that it took to generate each norm (default: no)\n");
 	printf("      -v           : will activate the verbose mode  (default: no)\n");
+	printf("      -e           : will show the error between gpu and cpu vercions of the code (default: no)\n");
+	printf("      -B   value   : will chage the block size for the cuda grid (default: 32)\n");
 	printf("     \n");
 }

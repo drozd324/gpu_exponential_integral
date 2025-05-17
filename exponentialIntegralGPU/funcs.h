@@ -8,7 +8,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#ifdef __cplusplus
+__constant__ static const double eulerConstant = 0.5772156649015329;
 
 template <typename real>
 __host__ __device__ inline real biggestNum(){
@@ -30,11 +30,12 @@ template <typename real>
 __host__ __device__ inline real exponentialIntegral(int n, real x, int maxIterations);
 
 template <typename real>
+real max_diff(std::vector<std::vector<real>>& a, real* b, int m, int n);
+
+template <typename real>
 void exponentialIntegral_grid_CPU(std::vector<std::vector<real>>& results, int n,
 		double a, double b, int maxIterations, int numberOfSamples);
 
 template <typename real>
 __global__ void exponentialIntegral_grid_GPU(real* results, int n,
 		double a, double b, int maxIterations, int numberOfSamples);
-
-#endif

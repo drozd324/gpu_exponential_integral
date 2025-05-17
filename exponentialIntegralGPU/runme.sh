@@ -1,18 +1,25 @@
 #!/bin/bash
 
-./main -v 
+FILE_NAME="out"
+> $FILE_NAME
 
 
+BlOCK_SIZE=()
+SIZES=4
 
-#
-#	printf("      -a   value   : will set the a value of the (a,b) interval in which the samples are taken to value (default: 0.0)\n");
-#	printf("      -b   value   : will set the b value of the (a,b) interval in which the samples are taken to value (default: 10.0)\n");
-#	printf("      -c           : will skip the CPU test\n");
-#	printf("      -g           : will skip the GPU test\n");
-#	printf("      -h           : will show this usage\n");
-#	printf("      -i   size    : will set the number of iterations to size (default: 2000000000)\n");
-#	printf("      -n   size    : will set the n (the order up to which we are calculating the exponential integrals) to size (default: 10)\n");
-#	printf("      -m   size    : will set the number of samples taken in the (a,b) interval to size (default: 10)\n");
-#	printf("      -t           : will output the amount of time that it took to generate each norm (default: no)\n");
-#	printf("      -v           : will activate the verbose mode  (default: no)\n");
-#	printf("     \n");
+for ((i=0; i<$NUM_POWERS; i++)); do
+	BLOCK_SIZE+=($((2*i)))
+done
+
+TEMP=$(./task2 -m ${POWERS[$j]} -n ${POWERS[$j]} -p $NUM_ITER -x ${POWERS[$i]} -y ${POWERS[$i]} -s)
+
+for (( i=0; i<; i++ )); do
+
+	FLAGS="-t -e -B ${i}" 
+	./main $FLAGS -n 5000 -m 5000 >> out
+	./main $FLAGS -n 8192 -m 8192 >> out 
+	#./main $FLAGS -n 16384 -m 16384 >> out
+	#./main $FLAGS -n 20000 -m 20000 >> out
+
+done
+

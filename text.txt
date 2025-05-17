@@ -56,10 +56,11 @@ choice, such as:
 * Testing the usage of the other memories (such as constant, shared, texture,
   surface, etc) to save register memory, so it doesn't get demoted to local
 memory, even if it does not provide performance benefits.
-* Using streams to let the compute and memory transfers overlap, even if it
-  does not provide performance benefits.
-* Testing any other advanced cuda technique (such as dynamic parallelism,
-  cooperative groups, etc), even if they do not provide performance benefits.
+
+#####* Using streams to let the compute and memory transfers overlap, even if it
+#####  does not provide performance benefits.
+#####* Testing any other advanced cuda technique (such as dynamic parallelism,
+#####  cooperative groups, etc), even if they do not provide performance benefits.
 
 Run the final versions of the program with the following sizes:
 

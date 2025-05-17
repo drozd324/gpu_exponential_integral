@@ -1,0 +1,12 @@
+calculating the exponentials on the CPU in FLOATS  took: 0.889070 seconds
+calculating the exponentials on the CPU in DOUBLES took: 1.904764 seconds
+calculating the exponentials on the GPU in FLOATS  took: 0.251478 seconds
+calculating the exponentials on the GPU in DOUBLES took: 0.089733 seconds
+Max absolute CPU GPU difference Float: 5.63939
+Max absolute CPU GPU difference Double: 5.63939
+calculating the exponentials on the CPU in FLOATS  took: 2.279300 seconds
+calculating the exponentials on the CPU in DOUBLES took: 4.800990 seconds
+calculating the exponentials on the GPU in FLOATS  took: 0.324472 seconds
+calculating the exponentials on the GPU in DOUBLES took: 0.234891 seconds
+Max absolute CPU GPU difference Float: 6.13233
+Max absolute CPU GPU difference Double: 6.13233
