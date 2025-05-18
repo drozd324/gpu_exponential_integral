@@ -94,8 +94,8 @@ int main(int argc, char *argv[]){
 	if (gpu){
 		
 		int N = n;
-		int M = maxIterations;
-		dim3 nBlock(block_size , block_size);
+		int M = numberOfSamples;
+		dim3 nBlock(block_size, block_size);
 		dim3 nGrid((N/nBlock.x ) + (!(N%nBlock.x) ? 0:1) , (M/nBlock.y) + (!(M%nBlock.y) ? 0:1));
 
 
@@ -109,6 +109,7 @@ int main(int argc, char *argv[]){
 		cudaStreamCreate(&streamFloat);
 		resultsFloatGpu = (float*)malloc(n*numberOfSamples * sizeof(float));
 		cudaMemcpyAsync(resultsFloatGpu , resultsFloatGpu_d , n*numberOfSamples * sizeof(float) , cudaMemcpyDeviceToHost, streamFloat);
+		//cudaMemcpy(resultsFloatGpu , resultsFloatGpu_d , n*numberOfSamples * sizeof(float) , cudaMemcpyDeviceToHost);
 
 		cudaFree(resultsFloatGpu_d);
 		cudaStreamSynchronize(streamFloat);
@@ -127,6 +128,7 @@ int main(int argc, char *argv[]){
 		cudaStreamCreate(&streamDouble);
 		resultsDoubleGpu = (double*)malloc(n*numberOfSamples * sizeof(double));
 		cudaMemcpyAsync(resultsDoubleGpu, resultsDoubleGpu_d, n*numberOfSamples * sizeof(double), cudaMemcpyDeviceToHost, streamDouble);
+		//cudaMemcpy(resultsDoubleGpu, resultsDoubleGpu_d, n*numberOfSamples * sizeof(double), cudaMemcpyDeviceToHost);
 
 		cudaFree(resultsDoubleGpu_d);
 		cudaStreamSynchronize(streamDouble);
@@ -187,8 +189,8 @@ void outputResultsGpu(float* resultsFloatGpu, double* resultsDoubleGpu){
 	for (ui=1; ui<=n; ui++) {
 		for (uj=1; uj<=numberOfSamples; uj++) {
 			x = a + uj*division;
-			std::cout << "GPU==> exponentialIntegralDouble (" << ui << "," << x <<")=" << resultsDoubleGpu[(ui-1)*n + uj-1] << " ,";
-			std::cout << "exponentialIntegralFloat  ("        << ui << "," << x <<")=" << resultsFloatGpu [(ui-1)*n + uj-1] << endl;
+			std::cout << "GPU==> exponentialIntegralDouble (" << ui << "," << x <<")=" << resultsDoubleGpu[(ui-1)*numberOfSamples + uj-1] << " ,";
+			std::cout << "exponentialIntegralFloat  ("        << ui << "," << x <<")=" << resultsFloatGpu [(ui-1)*numberOfSamples + uj-1] << endl;
 		}
 	}
 }
@@ -232,7 +234,7 @@ int parseArguments(int argc, char *argv[]){
 				error = true;
 			   	break;
 			case 'B':
-				block_size = atof(optarg);
+				block_size = atoi(optarg);
 			   	break;
 			default:
 				fprintf(stderr, "Invalid option given\n");

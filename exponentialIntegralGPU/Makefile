@@ -17,4 +17,4 @@ funcs.o: funcs.cu
 	$(NVCC) $(NVCCFLAGS) -c $< $(DEBUGNV)
 
 clean:
-	rm -f *.o $(EXECS)
+	rm -f *.o $(EXECS) out

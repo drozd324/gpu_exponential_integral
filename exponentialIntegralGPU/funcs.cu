@@ -80,7 +80,7 @@ void exponentialIntegral_grid_CPU(std::vector<std::vector<real>>& results, int n
 		double a, double b, int maxIterations, int numberOfSamples){
 
 	real x;
-	real division = (b - a) / ((real)(numberOfSamples));
+	real division = (b - a) / numberOfSamples;
 
 	for (int ui=1; ui<=n; ui++) {
 		for (int uj=1; uj<=numberOfSamples; uj++) {
@@ -98,13 +98,12 @@ __global__ void exponentialIntegral_grid_GPU(real* results, int n,
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	int idy = blockIdx.y * blockDim.y + threadIdx.y;
 
-
 	real x;
-	real division = (b - a) / ((real)(numberOfSamples));
+	real division = (b - a) / numberOfSamples;
 	
 	if (idx<n && idy<numberOfSamples){
 		x = a + (idy+1)*division;
-		results[idx*n + idy] = exponentialIntegral<real>(idx+1, x, maxIterations);
+		results[idx*numberOfSamples + idy]  = exponentialIntegral<real>(idx+1, x, maxIterations);
 	}
 }
 
@@ -117,3 +116,4 @@ template void exponentialIntegral_grid_CPU<double>(std::vector<std::vector<doubl
 
 template __global__ void exponentialIntegral_grid_GPU<float>(float*, int, double, double, int, int);
 template __global__ void exponentialIntegral_grid_GPU<double>(double*, int, double, double, int, int);
+
