@@ -1,5 +1,5 @@
 #align(center, text(17pt)[
-	  *CUDA HW3 | Exponential Integral*
+	*CUDA HW3 | Exponential Integral*
 	])
 
 #align(center)[
@@ -8,14 +8,28 @@
 	#link("mailto:drozdp@tcd.ie")
 ]
 
-= Heading 1
-#lorem(40)
+= Task 1
 
-== Subheading 1
-#lorem(40)
+#grid(
+	columns: (auto, auto),
+	rows: (auto, auto),
 
-#figure(
-image("gaelic_font.svg.png", width: 40%),
-caption: [I like this font],
+	figure(
+		image("./exponentialIntegralGPU/figures/.csv", width: 40%),
+	),
+	figure(
+		image("./exponentialIntegralGPU/figures/.csv", width: 40%),
+	),
+
+	figure(
+		image("./exponentialIntegralGPU/figures/.csv", width: 40%),
+	),
+	figure(
+		image("./exponentialIntegralGPU/figures/.csv", width: 40%),
+	)
 )
+
+
+== Task 2
+
 
