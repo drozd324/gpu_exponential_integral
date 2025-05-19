@@ -2,7 +2,7 @@ CC = g++
 NVCC = nvcc
 
 CXXFLAGS  =
-NVCCFLAGS = -O4 --use_fast_math --compiler-options -funroll-loops -arch=sm_75
+NVCCFLAGS = -O4 --use_fast_math --compiler-options -funroll-loops -arch=sm_75 -rdc=true
 
 DEBUGNV = #   -g -G --target-processes
 

@@ -172,8 +172,11 @@ int main(int argc, char *argv[]){
 	}
 
 	if (csv){
-		//"time_cpu_float,time_cpu_double,block_size,time_gpu_float,time_gpu_double,diff_float,diff_double,spdup_float,spdup_double" 
+		//"n,numberOfSamples,time_cpu_float,time_cpu_double,block_size,time_gpu_float,time_gpu_double,diff_float,diff_double,spdup_float,spdup_double,cpu,gpu" 
 		int none = -9999;	
+
+		std::cout << n << "," << numberOfSamples << ",";		
+		
 
 		if (cpu){
 			std::cout << timeTotalCpuFloat << "," << timeTotalCpuDouble << ",";		
@@ -202,6 +205,9 @@ int main(int argc, char *argv[]){
 			std::cout << none << ",";
 			std::cout << none << ",";
 		}
+
+		std::cout << cpu << ",";
+		std::cout << gpu << ",";
 		
 		std::cout << std::endl;
 	}
