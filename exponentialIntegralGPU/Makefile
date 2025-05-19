@@ -1,8 +1,8 @@
 CC = g++
 NVCC = nvcc
 
-CXXFLAGS  = -O4 $(DEBUG)    # for g++
-NVCCFLAGS = -O4# -funroll-loops --use_fast_math --compiler-options  -arch=sm_75
+CXXFLAGS  =
+NVCCFLAGS = -O4 --use_fast_math --compiler-options -funroll-loops -arch=sm_75
 
 DEBUGNV = #   -g -G --target-processes
 
@@ -11,10 +11,10 @@ EXECS = main
 all: $(EXECS)
 
 main: main.cu funcs.o
-	$(NVCC) $(NVCCFLAGS) -o $@ $^ $(DEBUGNV)
+	$(NVCC)  -o $@ $^ $(DEBUGNV) $(NVCCFLAGS)
 
 funcs.o: funcs.cu
-	$(NVCC) $(NVCCFLAGS) -c $< $(DEBUGNV)
+	$(NVCC) -c $< $(DEBUGNV) $(NVCCFLAGS) 
 
 clean:
-	rm -f *.o $(EXECS) out
+	rm -f *.o $(EXECS)

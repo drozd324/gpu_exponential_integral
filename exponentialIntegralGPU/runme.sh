@@ -2,33 +2,23 @@
 
 make
 
-FILE_NAME="out"
-> $FILE_NAME
+SIZES=(5000 8192 16384 20000)
 
-for (( i=1; i<3; i++ )); do
+for (( j=0; j<4; j++ )); do
+	FILE_NAME="out${SIZES[$j]}"
+	echo "time_cpu_float,time_cpu_double,block_size,time_gpu_float,time_gpu_double,diff_float,diff_double,spdup_float,spdup_double" > $FILE_NAME
+	
+	FLAGS_CPU="-g -r -B" 
+	echo "./main $FLAGS_CPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME"
+	./main $FLAGS_CPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME
+	./main $FLAGS_CPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME
 
-	FLAGS="-t -e -B $((32*i))" 
+	for (( i=1; i<33; i++ )); do
 
-	echo "./main $FLAGS -n 10 -m 10 >> out"
-	echo "./main $FLAGS -n 10 -m 10 >> out" >> out
-	./main $FLAGS -n 10 -m 10 >> out
-
-	echo "./main $FLAGS -n 5000 -m 5000 >> out"
-	echo "./main $FLAGS -n 5000 -m 5000 >> out" >> out
-	./main $FLAGS -n 5000 -m 5000 >> out
-
-	echo "./main $FLAGS -n 8192 -m 8192 >> out "
-	echo "./main $FLAGS -n 8192 -m 8192 >> out " >> out
-	./main $FLAGS -n 8192 -m 8192 >> out 
-#	
-#	echo "./main $FLAGS -n 16384 -m 16384 >> out"
-#	echo "./main $FLAGS -n 16384 -m 16384 >> out" >> out
-#	./main $FLAGS -n 16384 -m 16384 >> out
-#	
-#	echo "./main $FLAGS -n 20000 -m 20000 >> out"
-#	echo "./main $FLAGS -n 20000 -m 20000 >> out" >> out
-#	./main $FLAGS -n 20000 -m 20000 >> out
-#	
-#
+		FLAGS_GPU="-c -r -B $i " 
+		echo "./main $FLAGS_GPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME"
+		./main $FLAGS_GPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME
+		./main $FLAGS_GPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME
+	done
 done
 

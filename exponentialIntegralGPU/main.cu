@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <fstream>
 
 #include "funcs.h"
 
@@ -19,7 +20,7 @@ int	parseArguments(int argc, char **argv);
 void printUsage(void);
 
 int maxIterations;
-bool verbose, timing, cpu, gpu, error;
+bool verbose, timing, cpu, gpu, error, csv;
 int n, numberOfSamples;
 double a, b; // The interval that we are going to use
 
@@ -31,6 +32,7 @@ int main(int argc, char *argv[]){
 	verbose = false;
 	timing = false;
 	error = false;
+	csv = false;
 	// n is the maximum order of the exponential integral that we are going to test
 	// numberOfSamples is the number of samples in the interval [0,10] that we are going to calculate
 	n = 10;
@@ -93,6 +95,9 @@ int main(int argc, char *argv[]){
 
 	if (gpu){
 		
+		if (block_size > 1024)
+			printf("[ERROR] BLOCK SIZE TOO LARGE\n");
+
 		int N = n;
 		int M = numberOfSamples;
 		dim3 nBlock(block_size, block_size);
@@ -159,11 +164,46 @@ int main(int argc, char *argv[]){
 		}
 	}
 
-	if (error) {
+	if (error){
 		if (gpu && cpu){
 			std::cout << "Max absolute CPU GPU difference Float: " << max_diff(resultsFloatCpu, resultsFloatGpu, n, numberOfSamples) << "\n";
 			std::cout << "Max absolute CPU GPU difference Double: " << max_diff(resultsDoubleCpu, resultsDoubleGpu, n, numberOfSamples) << "\n";
 		}
+	}
+
+	if (csv){
+		//"time_cpu_float,time_cpu_double,block_size,time_gpu_float,time_gpu_double,diff_float,diff_double,spdup_float,spdup_double" 
+		int none = -9999;	
+
+		if (cpu){
+			std::cout << timeTotalCpuFloat << "," << timeTotalCpuDouble << ",";		
+		} else {
+			std::cout << none << "," << none << ",";		
+		}
+
+		if (gpu){
+			std::cout << block_size*block_size << ",";
+			std::cout << timeTotalGpuFloat << "," << timeTotalGpuDouble << ",";		
+		} else {
+			std::cout << none << ",";
+			std::cout << none << "," << none << ",";		
+		}
+
+		if (gpu && cpu){
+			std::cout << max_diff(resultsFloatCpu, resultsFloatGpu, n, numberOfSamples) << ",";
+			std::cout << max_diff(resultsDoubleCpu, resultsDoubleGpu, n, numberOfSamples) << ",";
+	
+			std::cout << timeTotalCpuFloat / timeTotalGpuFloat << ",";
+			std::cout << timeTotalCpuDouble / timeTotalGpuDouble << ",";
+		} else {
+			std::cout << none << ",";
+			std::cout << none << ",";
+	
+			std::cout << none << ",";
+			std::cout << none << ",";
+		}
+		
+		std::cout << std::endl;
 	}
 
 	return 0;
@@ -197,7 +237,7 @@ void outputResultsGpu(float* resultsFloatGpu, double* resultsDoubleGpu){
 
 int parseArguments(int argc, char *argv[]){
 	int c;
-	while ((c = getopt(argc, argv, "cgehi:n:m:a:b:B:tv")) != -1){
+	while ((c = getopt(argc, argv, "cgehri:n:m:a:b:B:tv")) != -1){
 		switch (c) {
 			case 'c':
 				cpu = false;
@@ -226,6 +266,9 @@ int parseArguments(int argc, char *argv[]){
 			   	break;
 			case 't':
 				timing = true;
+			   	break;
+			case 'r':
+				csv = true;
 			   	break;
 			case 'v':
 				verbose = true;
@@ -263,5 +306,6 @@ void printUsage(){
 	printf("      -v           : will activate the verbose mode  (default: no)\n");
 	printf("      -e           : will show the error between gpu and cpu vercions of the code (default: no)\n");
 	printf("      -B   value   : will chage the block size for the cuda grid (default: 32)\n");
+	printf("      -r           : will print runtime properites into a .csv style file (default: no)\n");
 	printf("     \n");
 }
