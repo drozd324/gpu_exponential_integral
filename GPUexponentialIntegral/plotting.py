@@ -20,23 +20,18 @@ sizes.sort()
 for size in sizes:
 	plt.clf()
 
-	df_cpu = df[ (df[n]==size) & (df[cpu]==0)]
-	df_gpu = df[ (df[n]==size) & (df[gpu]==1) ]
+	df_cpu = df[ (df[n]==size) & (df[cpu]==1)]
+	df_gpu = df[ (df[n]==size) & (df[gpu]==1)]
 
-	print(df_cpu)
-
-	t_float_cpu = (df_cpu[time_cpu_float])
-	t_float_gpu = np.array(df_gpu[time_gpu_float])
+	t_float_cpu  = np.array(df_cpu[time_cpu_float])
+	t_float_gpu  = np.array(df_gpu[time_gpu_float])
 	t_double_cpu = np.array(df_cpu[time_cpu_double])
 	t_double_gpu = np.array(df_gpu[time_gpu_double])
 
-	print(t_float_cpu)
-	spdup_float = t_float_cpu / t_float_gpu
-	spdup_double = t_double_cpu / t_double_gpu
+	spdup_float = list(t_float_cpu / t_float_gpu)
+	spdup_double = list(t_double_cpu / t_double_gpu)
 		
-	block = df_gpu[block_sizes]
-	print(block)
-	print(spdup_float)
+	block = list(df_gpu[block_sizes])
 
 	plt.plot(block, spdup_float, label=f"float")
 	plt.plot(block, spdup_double, label=f"double")
@@ -44,5 +39,9 @@ for size in sizes:
 	plt.xlabel("block size")
 	plt.ylabel("speedup")
 	plt.legend()
-	plt.title(f"")
+	plt.title(rf"For grid of size {size}x{size}")
 	plt.savefig(f"./figures/plot_{size}.png", dpi=300)
+
+	print(f"The best block_size for floats for grid of {size}x{size}: {block[spdup_float.index(max(spdup_float))]}")
+	print(f"The best block_size for doubles for grid of {size}x{size}: {block[spdup_double.index(max(spdup_double))]}")
+	print(" ")
