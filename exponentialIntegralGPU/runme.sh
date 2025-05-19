@@ -3,12 +3,10 @@
 make
 
 SIZES=(5000 8192 16384 20000)
+FILE_NAME="out.csv"
+echo "n,numberOfSamples,time_cpu_float,time_cpu_double,block_size,time_gpu_float,time_gpu_double,diff_float,diff_double,spdup_float,spdup_double,cpu,gpu" > $FILE_NAME
 
 for (( j=0; j<4; j++ )); do
-	FILE_NAME="out${SIZES[$j]}"
-	echo "n,numberOfSamples,time_cpu_float,time_cpu_double,block_size,time_gpu_float,time_gpu_double,diff_float,diff_double,spdup_float,spdup_double,cpu,gpu" > $FILE_NAME
-		
-	
 	FLAGS_CPU="-g -r" 
 	echo "./main $FLAGS_CPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME"
 	./main $FLAGS_CPU -n ${SIZES[$j]} -m ${SIZES[$j]} >> $FILE_NAME

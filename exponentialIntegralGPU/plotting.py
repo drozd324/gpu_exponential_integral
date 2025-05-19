@@ -15,23 +15,28 @@ cpu = df.columns[11]
 gpu = df.columns[12]
 
 sizes = list(set(list(df[n])))
-print(sizes)
+sizes.sort()
 
 for size in sizes:
 	plt.clf()
 
-	df_cpu = df[ df[n]==size & df[cpu]==1 & df[gpu]==0 ]
-	df_gpu = df[ df[n]==size & df[cpu]==0 & df[gpu]==1 ]
+	df_cpu = df[ (df[n]==size) & (df[cpu]==0)]
+	df_gpu = df[ (df[n]==size) & (df[gpu]==1) ]
 
-    t_float_cpu = np.array(df_cpu[time_cpu_float])
-    t_float_gpu = np.array(df_gpu[time_gpu_float])
-    t_double_cpu = np.array(df_cpu[time_cpu_double])
-    t_double_gpu = np.array(df_gpu[time_gpu_double])
+	print(df_cpu)
 
-    spdup_float = t_float_cpu / t_float_gpu
-    spdup_double = t_double_cpu / t_double_gpu
-        
+	t_float_cpu = (df_cpu[time_cpu_float])
+	t_float_gpu = np.array(df_gpu[time_gpu_float])
+	t_double_cpu = np.array(df_cpu[time_cpu_double])
+	t_double_gpu = np.array(df_gpu[time_gpu_double])
+
+	print(t_float_cpu)
+	spdup_float = t_float_cpu / t_float_gpu
+	spdup_double = t_double_cpu / t_double_gpu
+		
 	block = df_gpu[block_sizes]
+	print(block)
+	print(spdup_float)
 
 	plt.plot(block, spdup_float, label=f"float")
 	plt.plot(block, spdup_double, label=f"double")
