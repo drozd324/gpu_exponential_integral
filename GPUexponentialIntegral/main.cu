@@ -108,7 +108,8 @@ int main(int argc, char *argv[]){
 		float* resultsFloatGpu_d;
 		cudaMalloc((void**)& resultsFloatGpu_d , n*numberOfSamples * sizeof(float));
 
-		exponentialIntegral_grid_GPU<float><<<nGrid, nBlock>>>(resultsFloatGpu_d, n, a, b, maxIterations, numberOfSamples);
+		exponentialIntegral_grid_GPU_dynamic<float><<<nGrid, nBlock>>>(resultsFloatGpu_d, n, a, b, maxIterations, numberOfSamples, nBlock, nGrid);
+		//exponentialIntegral_grid_GPU<float><<<nGrid, nBlock>>>(resultsFloatGpu_d, n, a, b, maxIterations, numberOfSamples);
 
 		cudaStream_t streamFloat;
 		cudaStreamCreate(&streamFloat);
@@ -127,7 +128,8 @@ int main(int argc, char *argv[]){
 		double* resultsDoubleGpu_d;
 		cudaMalloc((void**)& resultsDoubleGpu_d, n*numberOfSamples * sizeof(double));
 
-		exponentialIntegral_grid_GPU<double><<<nGrid, nBlock>>>(resultsDoubleGpu_d, n, a, b, maxIterations, numberOfSamples);
+		exponentialIntegral_grid_GPU_dynamic<double><<<nGrid, nBlock>>>(resultsDoubleGpu_d, n, a, b, maxIterations, numberOfSamples, nBlock, nGrid);
+		//exponentialIntegral_grid_GPU<double><<<nGrid, nBlock>>>(resultsDoubleGpu_d, n, a, b, maxIterations, numberOfSamples);
 
 		cudaStream_t streamDouble;
 		cudaStreamCreate(&streamDouble);
