@@ -8,22 +8,22 @@
 	#link("mailto:drozdp@tcd.ie")
 ]
 
-= Task 1
+= Task 1 - Cuda Implementation
 
 Output from plotting.py
 
 #raw("
-	The best block_size for floats for grid of 5000x5000: 361
-	The best block_size for doubles for grid of 5000x5000: 256
+	The best block_size for floats for grid of 5000x5000: 361 = 19x19
+	The best block_size for doubles for grid of 5000x5000: 256 = 16x16
 	 
-	The best block_size for floats for grid of 8192x8192: 900
-	The best block_size for doubles for grid of 8192x8192: 784
+	The best block_size for floats for grid of 8192x8192: 900 = 30x30
+	The best block_size for doubles for grid of 8192x8192: 784 = 28x28
 	 
-	The best block_size for floats for grid of 16384x16384: 256
-	The best block_size for doubles for grid of 16384x16384: 256
+	The best block_size for floats for grid of 16384x16384: 256 = 16x16
+	The best block_size for doubles for grid of 16384x16384: 256 = 16x16
 	 
-	The best block_size for floats for grid of 20000x20000: 900
-	The best block_size for doubles for grid of 20000x20000: 1024
+	The best block_size for floats for grid of 20000x20000: 900 = 30x30
+	The best block_size for doubles for grid of 20000x20000: 1024 = 32x32
 ")
 
 #grid(
@@ -46,6 +46,6 @@ Output from plotting.py
 )
 
 
-== Task 2
+== Task 2 - LLM Implementation
 
 

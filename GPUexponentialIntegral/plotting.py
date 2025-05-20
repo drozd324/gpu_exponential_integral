@@ -42,6 +42,9 @@ for size in sizes:
 	plt.title(rf"For grid of size {size}x{size}")
 	plt.savefig(f"./figures/plot_{size}.png", dpi=300)
 
-	print(f"The best block_size for floats for grid of {size}x{size}: {block[spdup_float.index(max(spdup_float))]}")
-	print(f"The best block_size for doubles for grid of {size}x{size}: {block[spdup_double.index(max(spdup_double))]}")
+	best_block_float = block[spdup_float.index(max(spdup_float))]
+	best_block_double = block[spdup_double.index(max(spdup_double))]
+
+	print(f"The best block_size for floats for grid of {size}x{size}: {best_block_float} = {int(np.sqrt(best_block_float))}x{int(np.sqrt(best_block_float))}")
+	print(f"The best block_size for doubles for grid of {size}x{size}: {best_block_double} = {int(np.sqrt(best_block_double))}x{int(np.sqrt(best_block_double))}")
 	print(" ")
