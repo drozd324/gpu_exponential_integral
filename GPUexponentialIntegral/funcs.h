@@ -39,3 +39,8 @@ void exponentialIntegral_grid_CPU(std::vector<std::vector<real>>& results, int n
 template <typename real>
 __global__ void exponentialIntegral_grid_GPU(real* results, int n,
 		double a, double b, int maxIterations, int numberOfSamples);
+
+
+template <typename real>
+__global__ void exponentialIntegral_grid_GPU_dynamic(real* results, int n,
+		double a, double b, int maxIterations, int numberOfSamples, dim3 nBlock, dim3 nGrid);

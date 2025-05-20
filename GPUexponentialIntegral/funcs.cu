@@ -108,6 +108,22 @@ __global__ void exponentialIntegral_grid_GPU(real* results, int n,
 }
 
 
+template <typename real>
+__global__ void exponentialIntegral_grid_GPU_dynamic(real* results, int n,
+		double a, double b, int maxIterations, int numberOfSamples, dim3 nBlock, dim3 nGrid){
+
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	int idy = blockIdx.y * blockDim.y + threadIdx.y;
+
+	
+	if (idx==0 && idy==0){
+		// very dynamic parallel
+		exponentialIntegral_grid_GPU<real><<<nGrid, nBlock>>>(results, n, a, b, maxIterations, numberOfSamples);
+	}
+
+}
+
+
 template float max_diff(std::vector<std::vector<float>>& a, float* b, int m, int n);
 template double max_diff(std::vector<std::vector<double>>& a, double* b, int m, int n);
 
@@ -116,4 +132,7 @@ template void exponentialIntegral_grid_CPU<double>(std::vector<std::vector<doubl
 
 template __global__ void exponentialIntegral_grid_GPU<float>(float*, int, double, double, int, int);
 template __global__ void exponentialIntegral_grid_GPU<double>(double*, int, double, double, int, int);
+
+template  __global__ void exponentialIntegral_grid_GPU_dynamic<float>(float* results, int n, double a, double b, int maxIterations, int numberOfSamples, dim3 nBlock, dim3 nGrid);
+template  __global__ void exponentialIntegral_grid_GPU_dynamic<double>(double* results, int n, double a, double b, int maxIterations, int numberOfSamples, dim3 nBlock, dim3 nGrid);
 
