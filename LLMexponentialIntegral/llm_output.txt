@@ -1,0 +1,145 @@
+I used chat GPT and used the prompt "explain and make a cuda parallelised version of the following code" I then copy and pasted "main.cpp"
+Then got output of the following.
+
+To parallelize the provided exponential integral computation using CUDA, we'll offload the core computation to the GPU. Here's an overview of the process:
+🔍 Goal
+
+Parallelize the nested loop in main() that calculates exponential integrals for n orders over numberOfSamples x values using CUDA.
+🚧 Step-by-Step Plan
+
+    Flatten the 2D loop over (order, sample) into 1D CUDA threads.
+
+    Move the exponentialIntegralFloat kernel to GPU (use only float or double on GPU—float is lighter).
+
+    Allocate memory on the device and copy input/output.
+
+    Launch CUDA kernel, where each thread computes one (order, x) combination.
+
+    Copy results back to CPU and output/compare if needed.
+
+✅ Assumptions
+
+    We'll only implement the float version (exponentialIntegralFloat) on GPU for simplicity.
+
+    We'll store results in a flattened 1D array.
+
+    CPU vs GPU comparison is optional unless specified.
+
+🔁 Modified CUDA-Parallel Version
+🔧 Add CUDA Kernel in a New File (e.g., expint_gpu.cu)
+
+#include <stdio.h>
+#include <math.h>
+#include <limits>
+
+__device__ float exponentialIntegralFloatDevice(int n, float x, int maxIterations) {
+    const float eulerConstant = 0.5772156649015329f;
+    float epsilon = 1.E-30f;
+    float bigfloat = 1e30f;
+    int i, ii, nm1 = n - 1;
+    float a, b, c, d, del, fact, h, psi, ans = 0.0f;
+
+    if (n == 0) {
+        return expf(-x) / x;
+    } else {
+        if (x > 1.0f) {
+            b = x + n;
+            c = bigfloat;
+            d = 1.0f / b;
+            h = d;
+            for (i = 1; i <= maxIterations; i++) {
+                a = -i * (nm1 + i);
+                b += 2.0f;
+                d = 1.0f / (a * d + b);
+                c = b + a / c;
+                del = c * d;
+                h *= del;
+                if (fabsf(del - 1.0f) <= epsilon) {
+                    return h * expf(-x);
+                }
+            }
+            return h * expf(-x);
+        } else {
+            ans = (nm1 != 0 ? 1.0f / nm1 : -logf(x) - eulerConstant);
+            fact = 1.0f;
+            for (i = 1; i <= maxIterations; i++) {
+                fact *= -x / i;
+                if (i != nm1) {
+                    del = -fact / (i - nm1);
+                } else {
+                    psi = -eulerConstant;
+                    for (ii = 1; ii <= nm1; ii++) psi += 1.0f / ii;
+                    del = fact * (-logf(x) + psi);
+                }
+                ans += del;
+                if (fabsf(del) < fabsf(ans) * epsilon) return ans;
+            }
+            return ans;
+        }
+    }
+}
+
+__global__ void computeExpIntKernel(float* results, int n, int numberOfSamples, float a, float b, int maxIterations) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int total = n * numberOfSamples;
+
+    if (tid < total) {
+        int order = tid / numberOfSamples + 1;
+        int sample = tid % numberOfSamples + 1;
+        float x = a + sample * ((b - a) / (float)numberOfSamples);
+        results[tid] = exponentialIntegralFloatDevice(order, x, maxIterations);
+    }
+}
+
+🧠 Host Code Integration in main.cpp
+
+Add after the CPU path:
+
+#include <cuda_runtime.h>
+
+if (!cpu) {
+    float *d_results, *h_results;
+    int totalSize = n * numberOfSamples;
+    h_results = new float[totalSize];
+
+    cudaMalloc(&d_results, totalSize * sizeof(float));
+
+    dim3 blockSize(256);
+    dim3 gridSize((totalSize + blockSize.x - 1) / blockSize.x);
+
+    gettimeofday(&expoStart, NULL);
+    computeExpIntKernel<<<gridSize, blockSize>>>(d_results, n, numberOfSamples, (float)a, (float)b, maxIterations);
+    cudaDeviceSynchronize();
+    gettimeofday(&expoEnd, NULL);
+
+    cudaMemcpy(h_results, d_results, totalSize * sizeof(float), cudaMemcpyDeviceToHost);
+
+    timeTotalCpu = ((expoEnd.tv_sec + expoEnd.tv_usec * 0.000001) - (expoStart.tv_sec + expoStart.tv_usec * 0.000001));
+    
+    if (verbose) {
+        for (int ui = 1; ui <= n; ui++) {
+            for (int uj = 1; uj <= numberOfSamples; uj++) {
+                int idx = (ui - 1) * numberOfSamples + (uj - 1);
+                double x = a + uj * ((b - a) / numberOfSamples);
+                printf("GPU==> exponentialIntegralFloat(%d, %.6f) = %f\n", ui, x, h_results[idx]);
+            }
+        }
+    }
+
+    cudaFree(d_results);
+    delete[] h_results;
+}
+
+🛠️ Build with NVCC
+
+nvcc -o expint_cuda main.cpp expint_gpu.cu -lcuda -lcudart
+
+🚀 Final Notes
+
+    You can extend to support the double-precision version, though this may reduce performance on some GPUs.
+
+    You could compare CPU vs GPU results to verify accuracy.
+
+    For performance tuning, use pinned memory and CUDA streams.
+
+Would you like the full project directory structure or Makefile/CMakeLists.txt for easy compilation?
