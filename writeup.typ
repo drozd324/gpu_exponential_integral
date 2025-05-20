@@ -97,6 +97,7 @@ However without more probing of the LLM it only gives the following
 	nvcc -o expint_cuda main.cpp expint_gpu.cu -lcuda -lcudart
 ")
 
-to complile the two files bit with a quick  
+to complile the two files. With a quick try running the command doesnt work 
+and produces a stream of errors.
 
 
